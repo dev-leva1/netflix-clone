@@ -55,6 +55,7 @@ interface AppActions {
   setTopRated: (movies: Movie[]) => void
   addToFavorites: (movie: Movie) => void
   removeFromFavorites: (movieId: number) => void
+  toggleFavorite: (movie: Movie) => void
   clearFavorites: () => void
   
   // Загрузка и ошибки
@@ -152,6 +153,18 @@ export const useAppStore = create<AppState & AppActions>()(
             state.movies.favorites = state.movies.favorites.filter(
               movie => movie.id !== movieId
             )
+          }),
+        
+        toggleFavorite: (movie) =>
+          set((state) => {
+            const exists = state.movies.favorites.some(fav => fav.id === movie.id)
+            if (exists) {
+              state.movies.favorites = state.movies.favorites.filter(
+                fav => fav.id !== movie.id
+              )
+            } else {
+              state.movies.favorites.push(movie)
+            }
           }),
         
         clearFavorites: () =>
