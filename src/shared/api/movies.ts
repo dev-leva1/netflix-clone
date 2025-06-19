@@ -1,0 +1,190 @@
+import { apiClient, createRequestConfig } from './client'
+import { getMockTrendingMovies, getMockNewMovies, getMockTopMovies } from './mockData'
+import type { 
+  Movie, 
+  ApiResponse, 
+  PaginationParams, 
+  SortParams, 
+  FilterParams,
+  Review,
+  Season
+} from '@/shared/types'
+
+export interface MoviesQueryParams extends PaginationParams, SortParams, FilterParams {
+  selectFields?: string[]
+  notNullFields?: string[]
+  search?: string
+}
+
+export const moviesApi = {
+  async getMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    try {
+      const response = await apiClient.get<ApiResponse<Movie>>('/movie', createRequestConfig(params))
+      return response.data
+    } catch (error) {
+      console.warn('API request failed, using mock data:', error)
+      return getMockTrendingMovies()
+    }
+  },
+
+  async getMovie(id: number, params?: { selectFields?: string[] }): Promise<Movie> {
+    try {
+      const response = await apiClient.get<Movie>(`/movie/${id}`, createRequestConfig(params))
+      return response.data
+    } catch (error) {
+      console.warn('API request failed, using mock data:', error)
+      // Возвращаем первый фильм из mock данных
+      const mockData = getMockTrendingMovies()
+      return mockData.docs[0] || {} as Movie
+    }
+  },
+
+  async searchMovies(query: string, params: Omit<MoviesQueryParams, 'search'> = {}): Promise<ApiResponse<Movie>> {
+    try {
+      const searchParams = {
+        ...params,
+        search: query,
+      }
+      const response = await apiClient.get<ApiResponse<Movie>>('/movie/search', createRequestConfig(searchParams))
+      return response.data
+    } catch (error) {
+      console.warn('Search API request failed, using mock data:', error)
+      return getMockTrendingMovies()
+    }
+  },
+
+  async getRandomMovie(params?: FilterParams): Promise<Movie> {
+    try {
+      const response = await apiClient.get<Movie>('/movie/random', createRequestConfig(params))
+      return response.data
+    } catch (error) {
+      console.warn('Random movie API request failed, using mock data:', error)
+      const mockData = getMockTrendingMovies()
+      return mockData.docs[Math.floor(Math.random() * mockData.docs.length)] || {} as Movie
+    }
+  },
+
+  async getMoviesByGenre(genre: string, params: Omit<MoviesQueryParams, 'genres.name'> = {}): Promise<ApiResponse<Movie>> {
+    const genreParams = {
+      ...params,
+      'genres.name': genre,
+    }
+    return this.getMovies(genreParams)
+  },
+
+  async getMoviesByCountry(country: string, params: Omit<MoviesQueryParams, 'countries.name'> = {}): Promise<ApiResponse<Movie>> {
+    const countryParams = {
+      ...params,
+      'countries.name': country,
+    }
+    return this.getMovies(countryParams)
+  },
+
+  async getMoviesByYear(year: number, params: Omit<MoviesQueryParams, 'year'> = {}): Promise<ApiResponse<Movie>> {
+    const yearParams = {
+      ...params,
+      year,
+    }
+    return this.getMovies(yearParams)
+  },
+
+  async getMoviesByRating(minRating: number, params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    const ratingParams = {
+      ...params,
+      'rating.kp': `${minRating}-10`,
+    }
+    return this.getMovies(ratingParams)
+  },
+
+  async getTrendingMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    try {
+      const trendingParams = {
+        ...params,
+        'rating.kp': '7-10',
+        'votes.kp': '10000-999999',
+        field: 'rating.kp',
+        sortType: -1 as const,
+        limit: 20,
+      }
+      const response = await apiClient.get<ApiResponse<Movie>>('/movie', createRequestConfig(trendingParams))
+      return response.data
+    } catch (error) {
+      console.warn('Trending movies API request failed, using mock data:', error)
+      return getMockTrendingMovies()
+    }
+  },
+
+  async getNewMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    try {
+      const currentYear = new Date().getFullYear()
+      const newParams = {
+        ...params,
+        year: `${currentYear - 1}-${currentYear}`,
+        field: 'year',
+        sortType: -1 as const,
+        limit: 20,
+      }
+      const response = await apiClient.get<ApiResponse<Movie>>('/movie', createRequestConfig(newParams))
+      return response.data
+    } catch (error) {
+      console.warn('New movies API request failed, using mock data:', error)
+      return getMockNewMovies()
+    }
+  },
+
+  async getTopMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    try {
+      const topParams = {
+        ...params,
+        'rating.kp': '8-10',
+        'votes.kp': '50000-999999',
+        field: 'rating.kp',
+        sortType: -1 as const,
+        limit: 20,
+      }
+      const response = await apiClient.get<ApiResponse<Movie>>('/movie', createRequestConfig(topParams))
+      return response.data
+    } catch (error) {
+      console.warn('Top movies API request failed, using mock data:', error)
+      return getMockTopMovies()
+    }
+  },
+
+  async getSimilarMovies(movieId: number, params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    try {
+      const response = await apiClient.get<ApiResponse<Movie>>(`/movie/${movieId}/similar`, createRequestConfig(params))
+      return response.data
+    } catch (error) {
+      console.warn('Similar movies API request failed, using mock data:', error)
+      return getMockTrendingMovies()
+    }
+  },
+
+  async getMovieSeasons(movieId: number): Promise<Season[]> {
+    try {
+      const response = await apiClient.get<Season[]>(`/season`, createRequestConfig({ movieId }))
+      return response.data
+    } catch (error) {
+      console.warn('Movie seasons API request failed:', error)
+      return []
+    }
+  },
+
+  async getMovieReviews(movieId: number, params: PaginationParams = {}): Promise<ApiResponse<Review>> {
+    try {
+      const response = await apiClient.get<ApiResponse<Review>>(`/review`, createRequestConfig({ movieId, ...params }))
+      return response.data
+    } catch (error) {
+      console.warn('Movie reviews API request failed:', error)
+      return {
+        docs: [],
+        total: 0,
+        limit: params.limit || 20,
+        page: params.page || 1,
+        pages: 0
+      }
+    }
+  },
+}
+
+export type MoviesApi = typeof moviesApi 
