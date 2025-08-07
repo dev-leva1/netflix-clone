@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 import styled from '@emotion/styled'
 import { useTrendingMovies, useNewMovies, useTopMovies } from '@/shared/hooks/useMovies'
 import { MovieGrid } from '@/shared/ui'
+import { createHeroVariants, createPageVariants, createSectionVariants } from '@/shared/ui/motion'
 
 const HomeContainer = styled(motion.div)`
   min-height: 100vh;
@@ -65,41 +67,10 @@ const HeroSubtitle = styled.p`
   }
 `
 
-const pageVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
-      duration: 0.6,
-      staggerChildren: 0.2
-    }
-  }
-}
-
-const heroVariants = {
-  initial: { opacity: 0, scale: 0.9 },
-  animate: { 
-    opacity: 1, 
-    scale: 1,
-    transition: { 
-      duration: 0.8,
-      ease: "easeOut" as const
-    }
-  }
-}
-
-const sectionVariants = {
-  initial: { opacity: 0, y: 30 },
-  animate: { 
-    opacity: 1, 
-    y: 0,
-    transition: { 
-      duration: 0.6,
-      ease: "easeOut" as const
-    }
-  }
-}
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const pageVariants = createPageVariants(reduced)
+const heroVariants = createHeroVariants(reduced)
+const sectionVariants = createSectionVariants(reduced)
 
 export const HomePage = () => {
   const { 
@@ -119,6 +90,22 @@ export const HomePage = () => {
     isLoading: topLoading, 
     error: topError 
   } = useTopMovies()
+
+  useEffect(() => {
+    const firstPoster = trendingData?.docs?.[0]?.poster?.url
+    if (!firstPoster) return
+    const linkId = 'hero-preload'
+    if (document.getElementById(linkId)) return
+    const link = document.createElement('link')
+    link.id = linkId
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = firstPoster
+    document.head.appendChild(link)
+    return () => {
+      document.head.removeChild(link)
+    }
+  }, [trendingData])
 
   return (
     <HomeContainer
