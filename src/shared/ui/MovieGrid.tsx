@@ -156,7 +156,9 @@ const ErrorMessage = styled.p`
   max-width: 400px;
 `
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const reduced = typeof window !== 'undefined' && 'matchMedia' in window
+  ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  : false
 const gridVariants = createGridVariants(reduced)
 const cardVariants = createAppearCardVariants(reduced)
 

@@ -157,7 +157,9 @@ const PlaceholderImage = styled.div`
   font-size: 48px;
 `
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const reduced = typeof window !== 'undefined' && 'matchMedia' in window
+  ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  : false
 const cardVariants = createCardVariants(reduced)
 const overlayVariants = createOverlayVariants()
 

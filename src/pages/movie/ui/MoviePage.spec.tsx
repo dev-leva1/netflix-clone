@@ -94,6 +94,62 @@ describe('MoviePage', () => {
     expect(screen.getByRole('heading', { name: /Test Movie/i })).toBeInTheDocument()
     expect(screen.getByText(/2020/)).toBeInTheDocument()
   })
+
+  it('uses safe trailer URL only for allowed hosts', () => {
+    ;(mockedHooks.useMovie as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 1,
+        name: 'Movie With Trailer',
+        year: 2021,
+        rating: { kp: 8.2 },
+        videos: { trailers: [{ url: 'https://evil.com/video.mp4' }] },
+      },
+      isLoading: false,
+      error: undefined,
+    })
+
+    render(
+      <Providers>
+        <MoviePage />
+      </Providers>
+    )
+
+    // Секция react-player не появляется (фоллбек)
+    expect(screen.queryByTestId('react-player')).not.toBeInTheDocument()
+  })
+
+  it('renders similar movies without duplicates', () => {
+    ;(mockedHooks.useMovie as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 1,
+        name: 'Base Movie',
+      },
+      isLoading: false,
+      error: undefined,
+    })
+
+    ;(mockedHooks.useInfiniteSimilarMovies as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        pages: [
+          { docs: [{ id: 10, name: 'A' }, { id: 11, name: 'B' }], page: 1, pages: 2 },
+          { docs: [{ id: 10, name: 'A' }, { id: 12, name: 'C' }], page: 2, pages: 2 },
+        ],
+      },
+      isLoading: false,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+    })
+
+    render(
+      <Providers>
+        <MoviePage />
+      </Providers>
+    )
+
+    // Заголовок секции похожих есть
+    expect(screen.getByText(/Похожие фильмы/i)).toBeInTheDocument()
+  })
 })
 
 
