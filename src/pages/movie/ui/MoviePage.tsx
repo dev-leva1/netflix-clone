@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
-import { useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useMemo } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ReactPlayer from 'react-player'
 import { useMovie, useInfiniteSimilarMovies } from '@/shared/hooks/useMovies'
@@ -136,9 +136,18 @@ const ProviderLink = styled.a`
 
 export const MoviePage = () => {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const movieId = id ? parseInt(id, 10) : 0
-  const { data: movie, isLoading, error } = useMovie(movieId, Boolean(movieId))
-  const infiniteSimilar = useInfiniteSimilarMovies(movieId, { limit: 12 })
+  const safeMovieId = Math.min(10_000_000, Math.max(250, movieId || 250))
+
+  useEffect(() => {
+    if (movieId !== safeMovieId) {
+      navigate(`/movie/${safeMovieId}`, { replace: true })
+    }
+  }, [movieId, safeMovieId, navigate])
+
+  const { data: movie, isLoading, error } = useMovie(safeMovieId, Boolean(safeMovieId))
+  const infiniteSimilar = useInfiniteSimilarMovies(safeMovieId, { limit: 12 })
 
   const title = movie?.name || movie?.alternativeName || 'Без названия'
   const metaPieces = useMemo(() => {
