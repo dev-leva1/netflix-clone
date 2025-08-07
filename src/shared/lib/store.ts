@@ -150,7 +150,10 @@ export const useAppStore = create<AppState & AppActions>()(
           set((state) => {
             const trimmed = q.trim()
             if (!trimmed) return
-            const next = [trimmed, ...state.searchHistory.filter((s) => s !== trimmed)].slice(0, 10)
+            const next = [
+              trimmed,
+              ...state.searchHistory.filter((s: string) => s !== trimmed),
+            ].slice(0, 10)
             state.searchHistory = next
           }),
 
@@ -177,7 +180,7 @@ export const useAppStore = create<AppState & AppActions>()(
         
         addToFavorites: (movie) =>
           set((state) => {
-            const exists = state.movies.favorites.some(fav => fav.id === movie.id)
+            const exists = state.movies.favorites.some((fav: Movie) => fav.id === movie.id)
             if (!exists) {
               state.movies.favorites.push(movie)
             }
@@ -186,16 +189,16 @@ export const useAppStore = create<AppState & AppActions>()(
         removeFromFavorites: (movieId) =>
           set((state) => {
             state.movies.favorites = state.movies.favorites.filter(
-              movie => movie.id !== movieId
+              (movie: Movie) => movie.id !== movieId
             )
           }),
         
         toggleFavorite: (movie) =>
           set((state) => {
-            const exists = state.movies.favorites.some(fav => fav.id === movie.id)
+            const exists = state.movies.favorites.some((fav: Movie) => fav.id === movie.id)
             if (exists) {
               state.movies.favorites = state.movies.favorites.filter(
-                fav => fav.id !== movie.id
+                (fav: Movie) => fav.id !== movie.id
               )
             } else {
               state.movies.favorites.push(movie)
