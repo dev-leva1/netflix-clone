@@ -149,6 +149,18 @@ export const MoviePage = () => {
   const { data: movie, isLoading, error } = useMovie(safeMovieId, Boolean(safeMovieId))
   const infiniteSimilar = useInfiniteSimilarMovies(safeMovieId, { limit: 12 })
 
+  const similarMovies = useMemo(() => {
+    const pages = infiniteSimilar.data?.pages ?? []
+    const docs = pages.flatMap((p: any) => (Array.isArray(p?.docs) ? p.docs : []))
+    const seen = new Set<number>()
+    return docs.filter((m: any) => {
+      if (!m || typeof m.id !== 'number') return false
+      if (seen.has(m.id)) return false
+      seen.add(m.id)
+      return true
+    })
+  }, [infiniteSimilar.data])
+
   const title = movie?.name || movie?.alternativeName || 'Без названия'
   const metaPieces = useMemo(() => {
     if (!movie) return [] as string[]
@@ -223,12 +235,22 @@ export const MoviePage = () => {
           <div>
             <SectionTitle>Создатели</SectionTitle>
             <PersonsList>
-              {movie.persons
-                .filter((p) => p.enProfession === 'director' || p.enProfession === 'writer')
-                .slice(0, 8)
-                .map((p) => (
-                  <PersonItem key={p.id}>{p.name || p.enName}</PersonItem>
-                ))}
+              {(() => {
+                const filtered = (movie.persons || []).filter(
+                  (p) => p.enProfession === 'director' || p.enProfession === 'writer'
+                )
+                const seen = new Set<number>()
+                return filtered
+                  .filter((p) => {
+                    if (seen.has(p.id)) return false
+                    seen.add(p.id)
+                    return true
+                  })
+                  .slice(0, 8)
+                  .map((p) => (
+                    <PersonItem key={`${p.id}`}>{p.name || p.enName || 'Без имени'}</PersonItem>
+                  ))
+              })()}
             </PersonsList>
           </div>
         )}
@@ -237,12 +259,20 @@ export const MoviePage = () => {
           <div>
             <SectionTitle>В ролях</SectionTitle>
             <PersonsList>
-              {movie.persons
-                .filter((p) => p.enProfession === 'actor')
-                .slice(0, 12)
-                .map((p) => (
-                  <PersonItem key={p.id}>{p.name || p.enName}</PersonItem>
-                ))}
+              {(() => {
+                const filtered = (movie.persons || []).filter((p) => p.enProfession === 'actor')
+                const seen = new Set<number>()
+                return filtered
+                  .filter((p) => {
+                    if (seen.has(p.id)) return false
+                    seen.add(p.id)
+                    return true
+                  })
+                  .slice(0, 12)
+                  .map((p) => (
+                    <PersonItem key={`${p.id}`}>{p.name || p.enName || 'Без имени'}</PersonItem>
+                  ))
+              })()}
             </PersonsList>
           </div>
         )}
@@ -251,7 +281,7 @@ export const MoviePage = () => {
       <Section>
         <SectionTitle>Похожие фильмы</SectionTitle>
         <MovieGrid
-          movies={(infiniteSimilar.data?.pages || []).flatMap((p) => p.docs) || []}
+          movies={similarMovies}
           loading={infiniteSimilar.isLoading}
           error={undefined}
           cardSize="small"

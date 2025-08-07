@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from 'react'
 import { config } from '@/shared/config'
 import * as Dialog from '@radix-ui/react-dialog'
 
-const SidebarContainer = styled.aside<{ isOpen: boolean }>`
+const SidebarContainer = styled('aside', {
+  shouldForwardProp: (prop) => prop !== 'isOpen',
+})<{ isOpen: boolean }>`
   position: fixed;
   left: 0;
   top: 0;
@@ -36,7 +38,9 @@ const NavList = styled.nav`
   padding: 1rem 0;
 `
 
-const NavItem = styled(Link)<{ isActive: boolean; isOpen: boolean }>`
+const NavItem = styled(Link, {
+  shouldForwardProp: (prop) => prop !== 'isActive' && prop !== 'isOpen',
+})<{ isActive: boolean; isOpen: boolean }>`
   display: flex;
   align-items: center;
   padding: 1rem;
@@ -61,7 +65,9 @@ const NavIcon = styled.span`
   text-align: center;
 `
 
-const NavText = styled.span<{ isOpen: boolean }>`
+const NavText = styled('span', {
+  shouldForwardProp: (prop) => prop !== 'isOpen',
+})<{ isOpen: boolean }>`
   margin-left: 1rem;
   opacity: ${({ isOpen }) => (isOpen ? 1 : 0)};
   transition: opacity ${({ theme }) => theme.transitions.default};
