@@ -16,29 +16,22 @@ jobs:
           bun-version: latest
       - name: Install deps
         run: bun install --frozen-lockfile
-        working-directory: ./netflix-clone
       - name: Typecheck
         run: bun run typecheck
-        working-directory: ./netflix-clone
       - name: Lint
         run: bun run lint
-        working-directory: ./netflix-clone
       - name: Unit tests
         run: bun run test
-        working-directory: ./netflix-clone
       - name: Build
         run: bun run build
-        working-directory: ./netflix-clone
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-        working-directory: ./netflix-clone
+        run: bunx playwright install --with-deps
       - name: E2E tests
         run: bun run test:e2e
-        working-directory: ./netflix-clone
       - name: Upload preview artifact
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: netflix-clone/dist
+          path: dist
 
 
