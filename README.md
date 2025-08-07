@@ -55,6 +55,9 @@ cp .env.example .env
 4. Получите API ключ от [Kinopoisk API](https://api.kinopoisk.dev/) и добавьте его в `.env`:
 ```env
 VITE_KINOPOISK_API_KEY=your_api_key_here
+VITE_API_BASE_URL=https://api.kinopoisk.dev
+# Опционально: для мониторинга/логгирования
+# VITE_SENTRY_DSN=
 ```
 
 ### Запуск
@@ -62,6 +65,10 @@ VITE_KINOPOISK_API_KEY=your_api_key_here
 ```bash
 # Режим разработки
 bun dev
+
+# Проверка типов и линта
+bun typecheck
+bun lint
 
 # Сборка для продакшена
 bun build

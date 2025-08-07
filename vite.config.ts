@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -11,6 +13,15 @@ export default defineConfig({
         plugins: ['@emotion/babel-plugin'],
       },
     }),
+    visualizer({ filename: 'stats.html', gzipSize: true, brotliSize: true, open: false }),
+    VitePWA({
+      registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'service-worker.ts',
+      includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
+      manifest: false,
+    })
   ],
   resolve: {
     alias: {
@@ -40,6 +51,7 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
           query: ['@tanstack/react-query'],
+          motion: ['framer-motion']
         },
       },
     },
