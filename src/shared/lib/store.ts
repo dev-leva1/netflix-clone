@@ -8,6 +8,12 @@ interface AppState {
   theme: 'dark' | 'light'
   sidebarOpen: boolean
   searchQuery: string
+  searchFilters: {
+    genre?: string
+    year?: number | string
+    ratingFrom?: number
+  }
+  searchHistory: string[]
   
   // Фильмы состояние
   movies: {
@@ -48,6 +54,10 @@ interface AppActions {
   setTheme: (theme: AppState['theme']) => void
   toggleSidebar: () => void
   setSearchQuery: (query: string) => void
+  setSearchFilters: (filters: Partial<AppState['searchFilters']>) => void
+  clearSearchFilters: () => void
+  addToSearchHistory: (q: string) => void
+  clearSearchHistory: () => void
   
   // Фильмы действия
   setTrendingMovies: (movies: Movie[]) => void
@@ -76,6 +86,8 @@ const initialState: AppState = {
   theme: 'dark',
   sidebarOpen: false,
   searchQuery: '',
+  searchFilters: {},
+  searchHistory: [],
   
   movies: {
     trending: [],
@@ -122,6 +134,29 @@ export const useAppStore = create<AppState & AppActions>()(
         setSearchQuery: (query) =>
           set((state) => {
             state.searchQuery = query
+          }),
+        
+        setSearchFilters: (filters) =>
+          set((state) => {
+            state.searchFilters = { ...state.searchFilters, ...filters }
+          }),
+
+        clearSearchFilters: () =>
+          set((state) => {
+            state.searchFilters = {}
+          }),
+
+        addToSearchHistory: (q) =>
+          set((state) => {
+            const trimmed = q.trim()
+            if (!trimmed) return
+            const next = [trimmed, ...state.searchHistory.filter((s) => s !== trimmed)].slice(0, 10)
+            state.searchHistory = next
+          }),
+
+        clearSearchHistory: () =>
+          set((state) => {
+            state.searchHistory = []
           }),
         
         // Фильмы действия
@@ -219,6 +254,7 @@ export const useAppStore = create<AppState & AppActions>()(
           movies: {
             favorites: state.movies.favorites,
           },
+          searchHistory: state.searchHistory,
         }),
       }
     ),

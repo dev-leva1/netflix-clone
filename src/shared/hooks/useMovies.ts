@@ -1,6 +1,7 @@
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { moviesApi, type MoviesQueryParams } from '@/shared/api/movies'
+import { useDebouncedValue } from './useDebouncedValue'
 import { useAppStore } from '@/shared/lib/store'
 import { config } from '@/shared/config'
 
@@ -15,7 +16,7 @@ export const movieKeys = {
   trending: () => [...movieKeys.all, 'trending'] as const,
   newReleases: () => [...movieKeys.all, 'newReleases'] as const,
   topRated: () => [...movieKeys.all, 'topRated'] as const,
-  similar: (id: number) => [...movieKeys.all, 'similar', id] as const,
+  similar: (id: number, params?: MoviesQueryParams) => [...movieKeys.all, 'similar', id, params] as const,
   seasons: (id: number) => [...movieKeys.all, 'seasons', id] as const,
   reviews: (id: number) => [...movieKeys.all, 'reviews', id] as const,
 }
@@ -23,26 +24,35 @@ export const movieKeys = {
 // Хук для получения списка фильмов
 export const useMovies = (params: MoviesQueryParams = {}) => {
   const { setLoading, setError } = useAppStore()
-  
-  const query = useQuery({
+
+  const infinite = useInfiniteQuery({
     queryKey: movieKeys.list(params),
-    queryFn: () => moviesApi.getMovies(params),
+    queryFn: ({ pageParam }) => moviesApi.getMovies({ ...params, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || !('docs' in lastPage)) return undefined
+      if (lastPage.docs.length === 0) return undefined
+      return lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined
+    },
+    retry: (failureCount) => {
+      if (failureCount >= 3) return false
+      return true
+    },
     staleTime: config.cache.staleTime,
     gcTime: config.cache.cacheTime,
   })
 
-  // Используем useEffect для side effects вместо устаревших onSuccess/onError
   useEffect(() => {
-    if (query.isSuccess) {
+    if (infinite.isSuccess) {
       setLoading('trending', 'success')
       setError('trending')
-    } else if (query.isError) {
+    } else if (infinite.isError) {
       setLoading('trending', 'error')
-      setError('trending', query.error)
+      setError('trending', infinite.error)
     }
-  }, [query.isSuccess, query.isError, query.error, setLoading, setError])
+  }, [infinite.isSuccess, infinite.isError, infinite.error, setLoading, setError])
 
-  return query
+  return infinite
 }
 
 // Хук для получения конкретного фильма
@@ -59,11 +69,12 @@ export const useMovie = (id: number, enabled = true) => {
 // Хук для поиска фильмов
 export const useSearchMovies = (query: string, params: MoviesQueryParams = {}) => {
   const { setLoading, setError } = useAppStore()
-  
+  const debounced = useDebouncedValue(query, 400)
+
   const searchQuery = useQuery({
-    queryKey: movieKeys.search(query),
-    queryFn: () => moviesApi.searchMovies(query, params),
-    enabled: Boolean(query.trim()),
+    queryKey: movieKeys.search(debounced),
+    queryFn: () => moviesApi.searchMovies(debounced, params),
+    enabled: Boolean(debounced.trim()),
     staleTime: config.cache.staleTime,
     gcTime: config.cache.cacheTime,
   })
@@ -81,6 +92,17 @@ export const useSearchMovies = (query: string, params: MoviesQueryParams = {}) =
   return searchQuery
 }
 
+// Хук для подсказок по поиску
+export const useSearchSuggestions = (query: string) => {
+  const debounced = useDebouncedValue(query, 250)
+  return useQuery({
+    queryKey: [...movieKeys.all, 'suggestions', debounced],
+    queryFn: () => moviesApi.suggestMovies(debounced),
+    enabled: debounced.trim().length >= 2,
+    staleTime: 60_000,
+  })
+}
+
 // Хук для бесконечной прокрутки фильмов
 export const useInfiniteMovies = (params: MoviesQueryParams = {}) => {
   return useInfiniteQuery({
@@ -88,8 +110,34 @@ export const useInfiniteMovies = (params: MoviesQueryParams = {}) => {
     queryFn: ({ pageParam }) => moviesApi.getMovies({ ...params, page: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
+      if (!lastPage || !('docs' in lastPage)) return undefined
+      if (lastPage.docs.length === 0) return undefined
       return lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined
     },
+    retry: (failureCount) => {
+      if (failureCount >= 3) return false
+      return true
+    },
+    refetchOnWindowFocus: false,
+    staleTime: config.cache.staleTime,
+    gcTime: config.cache.cacheTime,
+  })
+}
+
+// Хук для бесконечного поиска
+export const useInfiniteSearchMovies = (query: string, params: MoviesQueryParams = {}) => {
+  const debounced = useDebouncedValue(query, 400)
+  return useInfiniteQuery({
+    queryKey: [...movieKeys.all, 'search', 'infinite', debounced, params],
+    queryFn: ({ pageParam }) => moviesApi.searchMovies(debounced, { ...params, page: pageParam }),
+    initialPageParam: 1,
+    enabled: Boolean(debounced.trim()),
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || !('docs' in lastPage)) return undefined
+      if (lastPage.docs.length === 0) return undefined
+      return lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined
+    },
+    refetchOnWindowFocus: false,
     staleTime: config.cache.staleTime,
     gcTime: config.cache.cacheTime,
   })
@@ -98,6 +146,7 @@ export const useInfiniteMovies = (params: MoviesQueryParams = {}) => {
 // Хук для трендовых фильмов
 export const useTrendingMovies = (params: MoviesQueryParams = {}) => {
   const { setTrendingMovies, setLoading, setError } = useAppStore()
+  const queryClient = useQueryClient()
   
   const query = useQuery({
     queryKey: movieKeys.trending(),
@@ -111,11 +160,14 @@ export const useTrendingMovies = (params: MoviesQueryParams = {}) => {
       setTrendingMovies(query.data.docs)
       setLoading('trending', 'success')
       setError('trending')
+      // Warmup: prefetch top/new lists quietly
+      queryClient.prefetchQuery({ queryKey: movieKeys.newReleases(), queryFn: () => moviesApi.getNewMovies({}) })
+      queryClient.prefetchQuery({ queryKey: movieKeys.topRated(), queryFn: () => moviesApi.getTopMovies({}) })
     } else if (query.isError) {
       setLoading('trending', 'error')
       setError('trending', query.error)
     }
-  }, [query.isSuccess, query.isError, query.data, query.error, setTrendingMovies, setLoading, setError])
+  }, [query.isSuccess, query.isError, query.data, query.error, setTrendingMovies, setLoading, setError, queryClient])
 
   return query
 }
@@ -173,8 +225,23 @@ export const useTopMovies = (params: MoviesQueryParams = {}) => {
 // Хук для похожих фильмов
 export const useSimilarMovies = (movieId: number, params: MoviesQueryParams = {}) => {
   return useQuery({
-    queryKey: movieKeys.similar(movieId),
+    queryKey: movieKeys.similar(movieId, params),
     queryFn: () => moviesApi.getSimilarMovies(movieId, params),
+    enabled: Boolean(movieId),
+    staleTime: config.cache.staleTime,
+    gcTime: config.cache.cacheTime,
+  })
+}
+
+// Хук для бесконечного списка похожих фильмов
+export const useInfiniteSimilarMovies = (movieId: number, params: MoviesQueryParams = {}) => {
+  return useInfiniteQuery({
+    queryKey: movieKeys.similar(movieId, params),
+    queryFn: ({ pageParam }) => moviesApi.getSimilarMovies(movieId, { ...params, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined
+    },
     enabled: Boolean(movieId),
     staleTime: config.cache.staleTime,
     gcTime: config.cache.cacheTime,
@@ -246,3 +313,4 @@ export type UseMoviesResult = ReturnType<typeof useMovies>
 export type UseMovieResult = ReturnType<typeof useMovie>
 export type UseSearchMoviesResult = ReturnType<typeof useSearchMovies>
 export type UseInfiniteMoviesResult = ReturnType<typeof useInfiniteMovies> 
+export type UseInfiniteSearchMoviesResult = ReturnType<typeof useInfiniteSearchMovies>
