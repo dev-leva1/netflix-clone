@@ -6,6 +6,7 @@ import { MovieGrid } from '@/shared/ui'
 import { useSearchParams } from 'react-router-dom'
 import { useIntersectionObserver } from '@/shared/hooks/useIntersectionObserver'
 import { SearchFilters } from './Filters'
+import { setSeo } from '@/shared/lib/seo'
 
 const SearchContainer = styled.div`
   padding: 2rem;
@@ -70,18 +71,10 @@ export const SearchPage = () => {
   useEffect(() => {
     const site = 'Netflix Clone'
     const title = searchQuery ? `Поиск: ${searchQuery} — ${site}` : `Поиск фильмов — ${site}`
-    document.title = title
-    const existing = document.querySelector('meta[name="description"]') as HTMLMetaElement | null
     const description = searchQuery
       ? `Результаты поиска по запросу "${searchQuery}". Фильтры: жанр, год, рейтинг.`
       : 'Поиск фильмов по жанрам, году и рейтингу на Netflix Clone.'
-    if (existing) existing.content = description
-    else {
-      const m = document.createElement('meta')
-      m.name = 'description'
-      m.content = description
-      document.head.appendChild(m)
-    }
+    setSeo(title, description)
   }, [searchQuery])
 
   return (

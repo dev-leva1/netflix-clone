@@ -1,12 +1,14 @@
 import styled from '@emotion/styled'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, lazy, Suspense } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import ReactPlayer from 'react-player'
 import { useMovie, useInfiniteSimilarMovies } from '@/shared/hooks/useMovies'
 import { MovieGrid } from '@/shared/ui/MovieGrid'
 import type { ApiResponse, Movie } from '@/shared/types'
+import { setSeo } from '@/shared/lib/seo'
 // type import removed (unused)
+
+const ReactPlayer = lazy(() => import('react-player'))
 
 const Page = styled.div`
   display: flex;
@@ -169,21 +171,13 @@ export const MoviePage = () => {
   useEffect(() => {
     if (!movie) return
     const site = 'Netflix Clone'
-    document.title = `${title} — ${site}`
-    const existing = document.querySelector('meta[name="description"]') as HTMLMetaElement | null
     const description = movie.description || movie.shortDescription || `${title}${metaPieces.length ? ` — ${metaPieces.join(' · ')}` : ''}`
-    if (existing) existing.content = description
-    else {
-      const m = document.createElement('meta')
-      m.name = 'description'
-      m.content = description
-      document.head.appendChild(m)
-    }
+    setSeo(`${title} — ${site}`, description)
   }, [movie, title, metaPieces])
 
-  if (!isValidId) return <ErrorText>Страница не найдена</ErrorText>
-  if (isLoading) return <LoadingText>Загрузка фильма...</LoadingText>
-  if (error) return <ErrorText>Ошибка загрузки: {error.message}</ErrorText>
+  if (!isValidId) return <ErrorText role="alert" aria-live="assertive">Страница не найдена</ErrorText>
+  if (isLoading) return <LoadingText role="status" aria-live="polite">Загрузка фильма...</LoadingText>
+  if (error) return <ErrorText role="alert" aria-live="assertive">Ошибка загрузки: {error.message}</ErrorText>
   if (!movie) return <ErrorText>Фильм не найден</ErrorText>
 
   const heroBg = movie.backdrop?.url || movie.poster?.url
@@ -216,14 +210,16 @@ export const MoviePage = () => {
         {safeTrailerUrl ? (
           <div>
             <SectionTitle>Трейлер</SectionTitle>
-            <TrailerWrapper>
-              <ReactPlayer
-                url={safeTrailerUrl}
-                width="100%"
-                height="100%"
-                controls
-              />
-            </TrailerWrapper>
+            <Suspense fallback={<TrailerWrapper />}> 
+              <TrailerWrapper>
+                <ReactPlayer
+                  url={safeTrailerUrl}
+                  width="100%"
+                  height="100%"
+                  controls
+                />
+              </TrailerWrapper>
+            </Suspense>
           </div>
         ) : (
           movie.watchability?.items?.length ? (
