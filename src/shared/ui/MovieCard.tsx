@@ -1,15 +1,17 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
 import { css } from '@emotion/react'
 import { useAppStore } from '@/shared/lib/store'
 import type { Movie } from '@/shared/types'
+import { createCardVariants, createOverlayVariants } from '@/shared/ui/motion'
 
 interface MovieCardProps {
   movie: Movie
   size?: 'small' | 'medium' | 'large'
   showRating?: boolean
   showFavoriteButton?: boolean
+  fetchPriority?: 'high' | 'low' | 'auto'
   onClick?: (movie: Movie) => void
 }
 
@@ -155,24 +157,9 @@ const PlaceholderImage = styled.div`
   font-size: 48px;
 `
 
-const cardVariants = {
-  initial: { scale: 1, y: 0 },
-  hover: { 
-    scale: 1.05, 
-    y: -8,
-    transition: {
-      type: "spring" as const,
-      stiffness: 300,
-      damping: 20
-    }
-  },
-  tap: { scale: 0.95 }
-}
-
-const overlayVariants = {
-  initial: { opacity: 0 },
-  hover: { opacity: 1 }
-}
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const cardVariants = createCardVariants(reduced)
+const overlayVariants = createOverlayVariants()
 
 const favoriteVariants = {
   initial: { opacity: 0, scale: 0.8 },
@@ -185,6 +172,7 @@ export const MovieCard = ({
   size = 'medium', 
   showRating = true, 
   showFavoriteButton = true,
+  fetchPriority = 'auto',
   onClick 
 }: MovieCardProps) => {
   const [imageError, setImageError] = useState(false)
@@ -208,6 +196,12 @@ export const MovieCard = ({
     onClick?.(movie)
   }, [movie, onClick])
 
+  const { width, height } = useMemo(() => {
+    if (size === 'small') return { width: 160, height: 240 }
+    if (size === 'large') return { width: 280, height: 420 }
+    return { width: 200, height: 300 }
+  }, [size])
+
   const renderImage = () => {
     if (imageError || !movie.poster?.url) {
       return (
@@ -217,13 +211,23 @@ export const MovieCard = ({
       )
     }
 
+    const src = movie.poster.url
+    const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp')
+
     return (
-      <Image
-        src={movie.poster.url}
-        alt={movie.name || movie.alternativeName || 'Movie poster'}
-        onError={handleImageError}
-        loading="lazy"
-      />
+      <picture>
+        <source srcSet={webpSrc} type="image/webp" />
+        <Image
+          src={src}
+          alt={movie.name || movie.alternativeName || 'Movie poster'}
+          onError={handleImageError}
+          loading="lazy"
+          decoding="async"
+          fetchPriority={fetchPriority}
+          width={width}
+          height={height}
+        />
+      </picture>
     )
   }
 

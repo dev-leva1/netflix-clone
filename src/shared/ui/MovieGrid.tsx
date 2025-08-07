@@ -4,6 +4,7 @@ import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
 import { MovieCard } from './MovieCard'
 import type { Movie } from '@/shared/types'
+import { createGridVariants, createAppearCardVariants } from '@/shared/ui/motion'
 
 interface MovieGridProps {
   movies: Movie[]
@@ -19,6 +20,7 @@ interface MovieGridProps {
     tablet: number
     desktop: number
   }
+  sentinel?: React.RefObject<HTMLDivElement>
 }
 
 const Container = styled.div`
@@ -154,29 +156,9 @@ const ErrorMessage = styled.p`
   max-width: 400px;
 `
 
-const gridVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1
-    }
-  }
-}
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 300,
-      damping: 24
-    }
-  }
-}
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const gridVariants = createGridVariants(reduced)
+const cardVariants = createAppearCardVariants(reduced)
 
 const skeletonVariants = {
   loading: {
@@ -202,7 +184,8 @@ export const MovieGrid = ({
     mobile: 2,
     tablet: 3,
     desktop: 5
-  }
+  },
+  sentinel
 }: MovieGridProps) => {
   const navigate = useNavigate()
 
@@ -282,6 +265,7 @@ export const MovieGrid = ({
           </motion.div>
         ))}
       </Grid>
+      {sentinel && <div ref={sentinel} />}
     </Container>
   )
 } 
