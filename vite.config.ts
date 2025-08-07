@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+import { splitVendorChunkPlugin } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -13,6 +14,7 @@ export default defineConfig({
         plugins: ['@emotion/babel-plugin'],
       },
     }),
+    splitVendorChunkPlugin(),
     visualizer({ filename: 'stats.html', gzipSize: true, brotliSize: true, open: false }),
     VitePWA({
       registerType: 'autoUpdate',
@@ -51,12 +53,14 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
           query: ['@tanstack/react-query'],
-          motion: ['framer-motion']
+          motion: ['framer-motion'],
+          player: ['react-player']
         },
       },
     },
     target: 'esnext',
     minify: 'esbuild',
+    cssMinify: 'esbuild',
   },
   optimizeDeps: {
     include: ['react', 'react-dom', '@emotion/react', '@emotion/styled'],

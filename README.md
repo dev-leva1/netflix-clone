@@ -125,10 +125,17 @@ bun preview
 - ✅ PWA (precache + runtime cache)
 
 ### В планах
-- 🔄 Тема light/dark
-- 🔄 Улучшение Mobile UX Sidebar/Header
-- 🔄 Оптимизация изображений (WebP/мульти-размеры)
+- ✅ Тема light/dark (persist + ThemeProvider)
+- ✅ Улучшение Mobile UX Sidebar/Header
+- ✅ Оптимизация изображений (AVIF/WebP, picture/srcset)
 - 🔄 Доп. тест-кейсы (unit/e2e)
+
+## 🧪 Продакшн
+
+- Сборка: `bun run build`
+- Превью: `bun run preview`
+- Docker: `docker build -t netflix-clone . && docker run -p 8080:80 netflix-clone`
+- Опционально: Sentry — установите `VITE_SENTRY_DSN` в `.env`
 
 ## 🎨 UI/UX
 

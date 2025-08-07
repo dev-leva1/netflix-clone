@@ -215,10 +215,12 @@ export const MovieCard = ({
 
     const src = movie.poster.url
     const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp')
+    const avifSrc = src.replace(/\.(jpg|jpeg|png|webp)$/i, '.avif')
 
     return (
       <picture>
-        <source srcSet={webpSrc} type="image/webp" />
+        <source srcSet={`${avifSrc}`} type="image/avif" />
+        <source srcSet={`${webpSrc}`} type="image/webp" />
         <Image
           src={src}
           alt={movie.name || movie.alternativeName || 'Movie poster'}
@@ -228,6 +230,7 @@ export const MovieCard = ({
           fetchPriority={fetchPriority}
           width={width}
           height={height}
+          srcSet={`${src} 1x, ${src} 2x`}
         />
       </picture>
     )

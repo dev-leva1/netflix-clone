@@ -10,6 +10,7 @@ import { Fallback } from '@/app/Fallback'
 import { DevToasts } from '@/app/DevToasts'
 import { useEffect, useMemo } from 'react'
 import { useTheme as useThemeStore } from '@/shared/lib/store'
+import * as Sentry from '@sentry/react'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -111,6 +112,22 @@ export const Providers = ({ children }: ProvidersProps) => {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', mode)
   }, [mode])
+
+  useEffect(() => {
+    if (config.sentry.dsn) {
+      Sentry.init({
+        dsn: config.sentry.dsn,
+        environment: config.sentry.environment,
+        integrations: [
+          Sentry.browserTracingIntegration(),
+          Sentry.replayIntegration(),
+        ],
+        tracesSampleRate: 0.2,
+        replaysSessionSampleRate: 0.05,
+        replaysOnErrorSampleRate: 1.0,
+      })
+    }
+  }, [])
 
   return (
     <QueryClientProvider client={queryClient}>
