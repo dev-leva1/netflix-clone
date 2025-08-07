@@ -6,14 +6,23 @@ const base = 'https://api.kinopoisk.dev'
 export const handlers = [
   http.get(base + '/movie', ({ request }) => {
     const url = new URL(request.url)
-    void url
+    if (url.searchParams.get('empty') === '1') {
+      return HttpResponse.json({ docs: [], total: 0, limit: 20, page: 1, pages: 0 })
+    }
     const docs = [
       { id: 1, name: 'Test Movie 1', year: 2020, rating: { kp: 7.5 }, poster: { url: '' } },
       { id: 2, name: 'Test Movie 2', year: 2021, rating: { kp: 8.1 }, poster: { url: '' } },
     ]
     return HttpResponse.json({ docs, total: docs.length, limit: 20, page: 1, pages: 1 })
   }),
-  http.get(base + '/movie/search', () => {
+  http.get(base + '/movie/search', ({ request }) => {
+    const url = new URL(request.url)
+    if (url.searchParams.get('error') === '1') {
+      return new HttpResponse(null, { status: 500, statusText: 'Internal Server Error' })
+    }
+    if (url.searchParams.get('empty') === '1') {
+      return HttpResponse.json({ docs: [], total: 0, limit: 20, page: 1, pages: 0 })
+    }
     const docs = [
       { id: 3, name: 'Search Result', year: 2022, rating: { kp: 7.2 }, poster: { url: '' } },
     ]
@@ -25,6 +34,9 @@ export const handlers = [
       return HttpResponse.json({ message: 'Not Found' }, { status: 404 })
     }
     return HttpResponse.json({ id, name: 'Detail Movie', year: 2020, rating: { kp: 7.9 }, poster: { url: '' } })
+  }),
+  http.get(base + '/movie/random', () => {
+    return HttpResponse.json({ id: 99, name: 'Random Movie', year: 2023, rating: { kp: 7.3 }, poster: { url: '' } })
   }),
   http.get(base + '/movie/:id/similars', () => {
     return HttpResponse.json({ docs: [], total: 0, limit: 12, page: 1, pages: 1 })
