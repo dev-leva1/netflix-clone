@@ -146,7 +146,7 @@ export const moviesApi = {
         ...params,
         'rating.kp': '7-10',
         'votes.kp': '10000-999999',
-        field: 'rating.kp',
+        sortField: 'rating.kp',
         sortType: -1 as const,
         limit: 20,
       }
@@ -164,7 +164,7 @@ export const moviesApi = {
       const newParams = {
         ...params,
         year: `${currentYear - 1}-${currentYear}`,
-        field: 'year',
+        sortField: 'year',
         sortType: -1 as const,
         limit: 20,
       }
@@ -182,7 +182,7 @@ export const moviesApi = {
         ...params,
         'rating.kp': '8-10',
         'votes.kp': '50000-999999',
-        field: 'rating.kp',
+        sortField: 'rating.kp',
         sortType: -1 as const,
         limit: 20,
       }
@@ -196,8 +196,12 @@ export const moviesApi = {
 
   async getSimilarMovies(movieId: number, params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
     try {
-      const response = await apiClient.get<ApiResponse<Movie>>(`/movie/${movieId}/similar`, createRequestConfig(params))
-      return response.data
+      const response = await apiClient.get<ApiResponse<Movie>>(`/movie/${movieId}/similars`, createRequestConfig(params))
+      const data = response.data as unknown
+      if (!data || typeof data !== 'object' || !('docs' in (data as any))) {
+        throw new Error('Invalid similar movies response shape')
+      }
+      return data as ApiResponse<Movie>
     } catch (error) {
       console.warn('Similar movies API request failed, using mock data:', error)
       return getMockTrendingMovies()

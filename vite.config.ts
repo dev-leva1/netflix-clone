@@ -19,7 +19,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'service-worker.ts',
-      includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
+      includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: false,
     })
   ],
