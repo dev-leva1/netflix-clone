@@ -1,9 +1,16 @@
 import styled from '@emotion/styled'
+import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { useMovie } from '@/shared/hooks/useMovies'
+import { motion } from 'framer-motion'
+import ReactPlayer from 'react-player'
+import { useMovie, useInfiniteSimilarMovies } from '@/shared/hooks/useMovies'
+import { MovieGrid } from '@/shared/ui/MovieGrid'
+// type import removed (unused)
 
-const MovieContainer = styled.div`
-  padding: 2rem;
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 `
 
 const LoadingText = styled.div`
@@ -18,25 +25,236 @@ const ErrorText = styled.div`
   padding: 2rem;
 `
 
-const MovieTitle = styled.h1`
+const Hero = styled.div<{ background?: string | undefined }>`
+  position: relative;
+  width: 100%;
+  min-height: 360px;
+  background: ${({ background }) =>
+    background ? `url(${background}) center/cover no-repeat` : '#111'};
+  display: flex;
+  align-items: flex-end;
+  box-shadow: inset 0 -120px 120px rgba(0,0,0,0.8);
+`
+
+const HeroContent = styled.div`
+  position: relative;
+  z-index: 1;
+  padding: 24px;
+  max-width: 1200px;
+`
+
+const Title = styled.h1`
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: 40px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+`
+
+const Meta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 14px;
+`
+
+const Badge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 12px;
+`
+
+const Section = styled.div`
+  max-width: 1200px;
+  padding: 0 24px 24px 24px;
+  margin-top: -40px;
+`
+
+const SectionTitle = styled.h2`
+  font-size: 24px;
+  margin: 16px 0;
+`
+
+const Description = styled.p`
+  color: ${({ theme }) => theme.colors.text.secondary};
+  white-space: pre-wrap;
+`
+
+const PersonsList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 8px;
+`
+
+const PersonItem = styled.span`
+  color: ${({ theme }) => theme.colors.text.primary};
+`
+
+const Button = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  background: ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  border-radius: 8px;
+  margin-top: 12px;
+`
+
+const TrailerWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+`
+
+const ProvidersList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+`
+
+const ProviderLink = styled.a`
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 13px;
+  text-decoration: none;
 `
 
 export const MoviePage = () => {
   const { id } = useParams<{ id: string }>()
   const movieId = id ? parseInt(id, 10) : 0
   const { data: movie, isLoading, error } = useMovie(movieId, Boolean(movieId))
+  const infiniteSimilar = useInfiniteSimilarMovies(movieId, { limit: 12 })
+
+  const title = movie?.name || movie?.alternativeName || 'Без названия'
+  const metaPieces = useMemo(() => {
+    if (!movie) return [] as string[]
+    const year = movie.year ? String(movie.year) : undefined
+    const length = movie.movieLength ? `${movie.movieLength} мин` : undefined
+    const age = movie.ageRating ? `${movie.ageRating}+` : undefined
+    const rating = movie.rating?.kp ? `⭐ ${movie.rating.kp.toFixed(1)} KP` : undefined
+    return [year, length, age, rating].filter(Boolean) as string[]
+  }, [movie])
 
   if (isLoading) return <LoadingText>Загрузка фильма...</LoadingText>
   if (error) return <ErrorText>Ошибка загрузки: {error.message}</ErrorText>
   if (!movie) return <ErrorText>Фильм не найден</ErrorText>
 
+  const heroBg = movie.backdrop?.url || movie.poster?.url
   return (
-    <MovieContainer>
-      <MovieTitle>{movie.name || movie.alternativeName}</MovieTitle>
-      <p>Страница фильма в разработке...</p>
-    </MovieContainer>
+    <Page>
+      <Hero as={motion.section} {...(heroBg ? { background: heroBg } : {})}>
+        <HeroContent>
+          <Title>{title}</Title>
+          <Meta>
+            {metaPieces.map((piece) => (
+              <Badge key={piece}>{piece}</Badge>
+            ))}
+            {movie.genres?.length ? (
+              <Badge>{movie.genres.map((g) => g.name).slice(0, 3).join(' · ')}</Badge>
+            ) : null}
+            {movie.countries?.length ? (
+              <Badge>{movie.countries.map((c) => c.name).slice(0, 2).join(' · ')}</Badge>
+            ) : null}
+          </Meta>
+        </HeroContent>
+      </Hero>
+
+      <Section>
+        {movie.slogan && <SectionTitle>Слоган</SectionTitle>}
+        {movie.slogan && <Description>“{movie.slogan}”</Description>}
+
+        <SectionTitle>Описание</SectionTitle>
+        <Description>{movie.description || movie.shortDescription || 'Описание недоступно'}</Description>
+
+        {movie.videos?.trailers?.length ? (
+          <div>
+            <SectionTitle>Трейлер</SectionTitle>
+            <TrailerWrapper>
+              <ReactPlayer
+                url={movie.videos?.trailers?.[0]?.url ?? ''}
+                width="100%"
+                height="100%"
+                controls
+              />
+            </TrailerWrapper>
+          </div>
+        ) : (
+          movie.watchability?.items?.length ? (
+            <div>
+              <SectionTitle>Где смотреть</SectionTitle>
+              <ProvidersList>
+                {movie.watchability.items.slice(0, 6).map((item) => (
+                  item.url ? (
+                    <ProviderLink key={item.name + item.url} href={item.url} target="_blank" rel="noreferrer noopener">
+                      {item.name}
+                    </ProviderLink>
+                  ) : null
+                ))}
+              </ProvidersList>
+            </div>
+          ) : null
+        )}
+
+        {!!movie.persons?.length && (
+          <div>
+            <SectionTitle>Создатели</SectionTitle>
+            <PersonsList>
+              {movie.persons
+                .filter((p) => p.enProfession === 'director' || p.enProfession === 'writer')
+                .slice(0, 8)
+                .map((p) => (
+                  <PersonItem key={p.id}>{p.name || p.enName}</PersonItem>
+                ))}
+            </PersonsList>
+          </div>
+        )}
+
+        {!!movie.persons?.length && (
+          <div>
+            <SectionTitle>В ролях</SectionTitle>
+            <PersonsList>
+              {movie.persons
+                .filter((p) => p.enProfession === 'actor')
+                .slice(0, 12)
+                .map((p) => (
+                  <PersonItem key={p.id}>{p.name || p.enName}</PersonItem>
+                ))}
+            </PersonsList>
+          </div>
+        )}
+      </Section>
+
+      <Section>
+        <SectionTitle>Похожие фильмы</SectionTitle>
+        <MovieGrid
+          movies={(infiniteSimilar.data?.pages || []).flatMap((p) => p.docs) || []}
+          loading={infiniteSimilar.isLoading}
+          error={undefined}
+          cardSize="small"
+          showFavoriteButton={false}
+          columns={{ mobile: 2, tablet: 4, desktop: 6 }}
+        />
+        {infiniteSimilar.hasNextPage && (
+          <Button onClick={() => infiniteSimilar.fetchNextPage()} disabled={infiniteSimilar.isFetchingNextPage}>
+            {infiniteSimilar.isFetchingNextPage ? 'Загрузка...' : 'Показать ещё'}
+          </Button>
+        )}
+      </Section>
+    </Page>
   )
 } 
