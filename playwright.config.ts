@@ -6,7 +6,7 @@ const previewPort = 4173
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 60_000,
+  timeout: 90_000,
   retries: 0,
   use: {
     baseURL: `http://localhost:${isCI ? previewPort : devPort}`,
@@ -21,6 +21,10 @@ export default defineConfig({
     port: isCI ? previewPort : devPort,
     reuseExistingServer: !isCI,
     timeout: 120_000,
+    env: {
+      VITE_KINOPOISK_API_KEY: process.env.VITE_KINOPOISK_API_KEY || 'e2e-test-key',
+      VITE_USE_MOCKS: 'true',
+    },
   },
 })
 

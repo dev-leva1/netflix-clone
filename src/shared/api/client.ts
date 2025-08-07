@@ -9,16 +9,17 @@ const createApiClient = () => {
     timeout: config.api.timeout,
     headers: {
       'Content-Type': 'application/json',
-      'X-API-KEY': config.api.apiKey,
     },
   })
 
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-        params: config.params,
-        data: config.data,
-      })
+      if (import.meta.env.DEV) {
+        logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+          params: config.params,
+          data: config.data,
+        })
+      }
       return config
     },
     (error: AxiosError) => {
@@ -29,20 +30,22 @@ const createApiClient = () => {
 
   client.interceptors.response.use(
     (response: AxiosResponse) => {
-      const preview = (() => {
-        const data = response.data
-        if (data == null) return data
-        try {
-          const str = JSON.stringify(data)
-          return str.length > 500 ? str.slice(0, 500) + '…(truncated)' : data
-        } catch {
-          return undefined
-        }
-      })()
-      logger.info(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-        status: response.status,
-        data: preview,
-      })
+      if (import.meta.env.DEV) {
+        const preview = (() => {
+          const data = response.data
+          if (data == null) return data
+          try {
+            const str = JSON.stringify(data)
+            return str.length > 500 ? str.slice(0, 500) + '…(truncated)' : data
+          } catch {
+            return undefined
+          }
+        })()
+        logger.info(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+          status: response.status,
+          data: preview,
+        })
+      }
       return response
     },
     (error: AxiosError) => {

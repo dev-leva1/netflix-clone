@@ -1,5 +1,5 @@
 import { apiClient, createRequestConfig } from './client'
-import { getMockTrendingMovies, getMockNewMovies, getMockTopMovies } from './mockData'
+import { getMockTrendingMovies, getMockNewMovies, getMockTopMovies, mockMovies } from './mockData'
 import type { 
   Movie, 
   ApiResponse, 
@@ -19,6 +19,9 @@ export interface MoviesQueryParams extends PaginationParams, SortParams, FilterP
 
 export const moviesApi = {
   async getMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return getMockTrendingMovies()
+    }
     try {
       const response = await apiClient.get<ApiResponse<Movie>>('/movie', createRequestConfig(params))
       return response.data
@@ -29,6 +32,10 @@ export const moviesApi = {
   },
 
   async getMovie(id: number, params?: { selectFields?: string[] }): Promise<Movie> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      const found = mockMovies.find((m) => m.id === id)
+      return (found || mockMovies[0]) as Movie
+    }
     try {
       const defaultSelectFields: string[] = [
         'id',
@@ -73,6 +80,9 @@ export const moviesApi = {
   },
 
   async searchMovies(query: string, params: Omit<MoviesQueryParams, 'search'> = {}): Promise<ApiResponse<Movie>> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return getMockTrendingMovies()
+    }
     try {
       const searchParams = {
         ...params,
@@ -87,6 +97,9 @@ export const moviesApi = {
   },
 
   async suggestMovies(query: string): Promise<Pick<ApiResponse<Movie>, 'docs'>> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return { docs: mockMovies.slice(0, 8) as Movie[] }
+    }
     try {
       const params = { search: query, selectFields: ['id', 'name', 'year'], limit: 8, suggestions: true }
       const response = await apiClient.get<ApiResponse<Movie>>('/movie/search', createRequestConfig(params))
@@ -98,6 +111,9 @@ export const moviesApi = {
   },
 
   async getRandomMovie(params?: FilterParams): Promise<Movie> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return mockMovies[Math.floor(Math.random() * mockMovies.length)] as Movie
+    }
     try {
       const response = await apiClient.get<Movie>('/movie/random', createRequestConfig(params))
       return response.data
@@ -141,6 +157,9 @@ export const moviesApi = {
   },
 
   async getTrendingMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return getMockTrendingMovies()
+    }
     try {
       const trendingParams = {
         ...params,
@@ -159,6 +178,9 @@ export const moviesApi = {
   },
 
   async getNewMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return getMockNewMovies()
+    }
     try {
       const currentYear = new Date().getFullYear()
       const newParams = {
@@ -177,6 +199,9 @@ export const moviesApi = {
   },
 
   async getTopMovies(params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return getMockTopMovies()
+    }
     try {
       const topParams = {
         ...params,
@@ -195,6 +220,9 @@ export const moviesApi = {
   },
 
   async getSimilarMovies(movieId: number, params: MoviesQueryParams = {}): Promise<ApiResponse<Movie>> {
+    if (import.meta.env.VITE_USE_MOCKS === 'true') {
+      return getMockTrendingMovies()
+    }
     try {
       const response = await apiClient.get<ApiResponse<Movie>>(`/movie/${movieId}/similars`, createRequestConfig(params))
       const data = response.data as unknown

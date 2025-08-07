@@ -16,6 +16,10 @@ COPY public/robots.txt ./robots.txt
 COPY public/manifest.webmanifest ./manifest.webmanifest
 COPY public/icon-192.png ./icon-192.png
 COPY public/icon-512.png ./icon-512.png
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx-global.conf /etc/nginx/conf.d/00-global.conf
+COPY docker-entrypoint.sh /docker-entrypoint.d/10-security-headers.sh
+RUN chmod +x /docker-entrypoint.d/10-security-headers.sh
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 

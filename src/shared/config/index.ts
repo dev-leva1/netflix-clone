@@ -1,8 +1,6 @@
 export const config = {
   api: {
-    baseUrl: import.meta.env.DEV 
-      ? '/api/v1.4'  // Используем proxy в development
-      : import.meta.env.VITE_API_BASE_URL || 'https://api.kinopoisk.dev/v1.4',
+    baseUrl: '/api/v1.4',
     apiKey: import.meta.env.VITE_KINOPOISK_API_KEY || '',
     timeout: 10000,
   },

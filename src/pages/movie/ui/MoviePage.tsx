@@ -222,20 +222,26 @@ export const MoviePage = () => {
             </Suspense>
           </div>
         ) : (
-          movie.watchability?.items?.length ? (
-            <div>
-              <SectionTitle>Где смотреть</SectionTitle>
-              <ProvidersList>
-                {movie.watchability.items.slice(0, 6).map((item) => (
-                  item.url ? (
-                    <ProviderLink key={item.name + item.url} href={item.url} target="_blank" rel="noreferrer noopener">
-                      {item.name}
-                    </ProviderLink>
-                  ) : null
-                ))}
-              </ProvidersList>
-            </div>
-          ) : null
+          <div>
+            <SectionTitle>Трейлер</SectionTitle>
+            <Description>
+              Трейлер недоступен из-за политики безопасности. Разрешены источники: YouTube и Vimeo.
+            </Description>
+            {movie.watchability?.items?.length ? (
+              <div>
+                <SectionTitle>Где смотреть</SectionTitle>
+                <ProvidersList>
+                  {movie.watchability.items.slice(0, 6).map((item) => (
+                    item.url ? (
+                      <ProviderLink key={item.name + item.url} href={item.url} target="_blank" rel="noreferrer noopener">
+                        {item.name}
+                      </ProviderLink>
+                    ) : null
+                  ))}
+                </ProvidersList>
+              </div>
+            ) : null}
+          </div>
         )}
 
         {!!movie.persons?.length && (

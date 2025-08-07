@@ -42,6 +42,9 @@ export default defineConfig({
       '/api': {
         target: 'https://api.kinopoisk.dev',
         changeOrigin: true,
+        headers: {
+          'X-API-KEY': process.env.VITE_KINOPOISK_API_KEY || '',
+        },
         rewrite: (path) => path.replace(/^\/api/, ''),
       }
     }
