@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { config } from '@/shared/config'
 import type { BaseError } from '@/shared/types'
+import { logger } from '@/shared/lib/logger'
 
 const createApiClient = () => {
   const client = axios.create({
@@ -14,36 +15,28 @@ const createApiClient = () => {
 
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      if (import.meta.env.DEV) {
-        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-          params: config.params,
-          data: config.data,
-        })
-      }
+      logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+        params: config.params,
+        data: config.data,
+      })
       return config
     },
     (error: AxiosError) => {
-      if (import.meta.env.DEV) {
-        console.error('❌ API Request Error:', error)
-      }
+      logger.error('API Request Error', error)
       return Promise.reject(error)
     }
   )
 
   client.interceptors.response.use(
     (response: AxiosResponse) => {
-      if (import.meta.env.DEV) {
-        console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-          status: response.status,
-          data: response.data,
-        })
-      }
+      logger.info(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+        status: response.status,
+        data: response.data,
+      })
       return response
     },
     (error: AxiosError) => {
-      if (import.meta.env.DEV) {
-        console.error('❌ API Response Error:', error)
-      }
+      logger.error('API Response Error', error)
 
       const customError: BaseError = {
         message: error.message || 'Произошла ошибка при запросе к серверу',

@@ -7,10 +7,16 @@ export const mockMovies = [
     name: 'Интерстеллар',
     alternativeName: 'Interstellar',
     year: 2014,
+    movieLength: 169,
+    ageRating: 12,
     rating: { kp: 8.6, imdb: 8.6 },
     poster: {
       url: 'https://i.ibb.co/NgxVZdXf/image.png',
       previewUrl: 'https://image.tmdb.org/t/p/w300/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg'
+    },
+    backdrop: {
+      url: 'https://i.ibb.co/4sj6cY0/backdrop.png',
+      previewUrl: 'https://image.tmdb.org/t/p/w780/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg'
     },
     genres: [{ name: 'фантастика' }, { name: 'драма' }],
     countries: [{ name: 'США' }],
@@ -21,10 +27,16 @@ export const mockMovies = [
     name: 'Начало',
     alternativeName: 'Inception',
     year: 2010,
+    movieLength: 148,
+    ageRating: 12,
     rating: { kp: 8.8, imdb: 8.8 },
     poster: {
       url: 'https://i.ibb.co/0VrT8XVT/image.png',
       previewUrl: 'https://image.tmdb.org/t/p/w300/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'
+    },
+    backdrop: {
+      url: 'https://i.ibb.co/qk0v2zF/backdrop.png',
+      previewUrl: 'https://image.tmdb.org/t/p/w780/s3TBrRGB1iav7gFOCNx3H31MoES.jpg'
     },
     genres: [{ name: 'фантастика' }, { name: 'боевик' }],
     countries: [{ name: 'США' }],
@@ -35,10 +47,16 @@ export const mockMovies = [
     name: 'Темный рыцарь',
     alternativeName: 'The Dark Knight',
     year: 2008,
+    movieLength: 152,
+    ageRating: 12,
     rating: { kp: 8.9, imdb: 9.0 },
     poster: {
       url: 'https://i.ibb.co/xtRF3rgK/image.png',
       previewUrl: 'https://image.tmdb.org/t/p/w300/qJ2tW6WMUDux911r6m7haRef0WH.jpg'
+    },
+    backdrop: {
+      url: 'https://i.ibb.co/W0jN3yW/backdrop.png',
+      previewUrl: 'https://image.tmdb.org/t/p/w780/hZkgoQYus5vegHoetLkCJzb17zJ.jpg'
     },
     genres: [{ name: 'боевик' }, { name: 'криминал' }],
     countries: [{ name: 'США' }],

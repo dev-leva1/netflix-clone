@@ -14,6 +14,7 @@ export interface MoviesQueryParams extends PaginationParams, SortParams, FilterP
   selectFields?: string[]
   notNullFields?: string[]
   search?: string
+  suggestions?: boolean
 }
 
 export const moviesApi = {
@@ -29,13 +30,45 @@ export const moviesApi = {
 
   async getMovie(id: number, params?: { selectFields?: string[] }): Promise<Movie> {
     try {
-      const response = await apiClient.get<Movie>(`/movie/${id}`, createRequestConfig(params))
+      const defaultSelectFields: string[] = [
+        'id',
+        'name',
+        'alternativeName',
+        'year',
+        'rating.kp',
+        'votes.kp',
+        'poster.url',
+        'poster.previewUrl',
+        'backdrop.url',
+        'backdrop.previewUrl',
+        'genres.name',
+        'countries.name',
+        'movieLength',
+        'shortDescription',
+        'description',
+        'slogan',
+        'ageRating',
+        'videos.trailers.url',
+        'videos.trailers.name',
+        'videos.trailers.site',
+        'watchability.items.name',
+        'watchability.items.url',
+        'persons.id',
+        'persons.name',
+        'persons.enName',
+        'persons.photo',
+        'persons.enProfession',
+      ]
+
+      const response = await apiClient.get<Movie>(
+        `/movie/${id}`,
+        createRequestConfig({ selectFields: params?.selectFields ?? defaultSelectFields })
+      )
       return response.data
     } catch (error) {
       console.warn('API request failed, using mock data:', error)
-      // Возвращаем первый фильм из mock данных
       const mockData = getMockTrendingMovies()
-      return mockData.docs[0] || {} as Movie
+      return (mockData.docs.find((m) => m.id === id) || mockData.docs[0] || {}) as Movie
     }
   },
 
@@ -50,6 +83,17 @@ export const moviesApi = {
     } catch (error) {
       console.warn('Search API request failed, using mock data:', error)
       return getMockTrendingMovies()
+    }
+  },
+
+  async suggestMovies(query: string): Promise<Pick<ApiResponse<Movie>, 'docs'>> {
+    try {
+      const params = { search: query, selectFields: ['id', 'name', 'year'], limit: 8, suggestions: true }
+      const response = await apiClient.get<ApiResponse<Movie>>('/movie/search', createRequestConfig(params))
+      return { docs: response.data.docs }
+    } catch {
+      const mock = await this.searchMovies(query)
+      return { docs: mock.docs.slice(0, 8) }
     }
   },
 
