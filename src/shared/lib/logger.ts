@@ -29,9 +29,7 @@ export const logger = {
       event.error = error
     }
     if (import.meta.env.DEV) {
-      // консоль в dev
       const payload = context ? { ...context, error } : error ? { error } : undefined
-      // eslint-disable-next-line no-console
       if (payload) {
         console[level === 'debug' ? 'log' : level](`[${event.timestamp}] ${message}`, payload)
       } else {

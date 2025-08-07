@@ -198,7 +198,7 @@ export const moviesApi = {
     try {
       const response = await apiClient.get<ApiResponse<Movie>>(`/movie/${movieId}/similars`, createRequestConfig(params))
       const data = response.data as unknown
-      if (!data || typeof data !== 'object' || !('docs' in (data as any))) {
+      if (!data || typeof data !== 'object' || !('docs' in (data as { docs?: unknown }))) {
         throw new Error('Invalid similar movies response shape')
       }
       return data as ApiResponse<Movie>

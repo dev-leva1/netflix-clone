@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import ReactPlayer from 'react-player'
 import { useMovie, useInfiniteSimilarMovies } from '@/shared/hooks/useMovies'
 import { MovieGrid } from '@/shared/ui/MovieGrid'
+import type { ApiResponse, Movie } from '@/shared/types'
 // type import removed (unused)
 
 const Page = styled.div`
@@ -150,10 +151,10 @@ export const MoviePage = () => {
   const infiniteSimilar = useInfiniteSimilarMovies(safeMovieId, { limit: 12 })
 
   const similarMovies = useMemo(() => {
-    const pages = infiniteSimilar.data?.pages ?? []
-    const docs = pages.flatMap((p: any) => (Array.isArray(p?.docs) ? p.docs : []))
+    const pages = (infiniteSimilar.data?.pages ?? []) as Array<ApiResponse<Movie>>
+    const docs = pages.flatMap((p) => p.docs ?? [])
     const seen = new Set<number>()
-    return docs.filter((m: any) => {
+    return docs.filter((m) => {
       if (!m || typeof m.id !== 'number') return false
       if (seen.has(m.id)) return false
       seen.add(m.id)
