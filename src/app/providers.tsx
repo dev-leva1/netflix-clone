@@ -4,6 +4,11 @@ import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from '@emotion/react'
 import { Global, css } from '@emotion/react'
 import { config } from '@/shared/config'
+import { logger } from '@/shared/lib/logger'
+import { ErrorBoundary } from '@/app/ErrorBoundary'
+import { Fallback } from '@/app/Fallback'
+import { DevToasts } from '@/app/DevToasts'
+import { useEffect } from 'react'
 //import { useAppStore } from '@/shared/lib/store'
 
 const queryClient = new QueryClient({
@@ -12,6 +17,7 @@ const queryClient = new QueryClient({
       staleTime: config.cache.staleTime,
       gcTime: config.cache.cacheTime,
       retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** (attempt - 1), 3000),
       refetchOnWindowFocus: false,
     },
   },
@@ -84,10 +90,26 @@ export const Providers = ({ children }: ProvidersProps) => {
       <BrowserRouter>
         <ThemeProvider theme={theme}>
           <Global styles={globalStyles} />
-          {children}
+          <ServiceWorkerRegister />
+          <ErrorBoundary
+            fallback={<Fallback />}
+            onError={(error) => logger.error('Unhandled UI error', error)}
+          >
+            {children}
+          </ErrorBoundary>
+          {import.meta.env.DEV && <DevToasts />}
           {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
         </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   )
 } 
+
+const ServiceWorkerRegister = () => {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {})
+    }
+  }, [])
+  return null
+}
