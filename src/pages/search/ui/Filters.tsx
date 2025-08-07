@@ -50,14 +50,11 @@ export const SearchFilters = () => {
     next.delete('page')
     setParams(next)
     if (key === 'ratingFrom') {
-      if (value) setSearchFilters({ ratingFrom: Number(value) })
-      else setSearchFilters({ ratingFrom: undefined as unknown as number })
+      setSearchFilters({ ratingFrom: value ? Number(value) : undefined })
     } else if (key === 'year') {
-      if (value) setSearchFilters({ year: value })
-      else setSearchFilters({ year: undefined as unknown as string | number })
+      setSearchFilters({ year: value || undefined })
     } else {
-      if (value) setSearchFilters({ genre: value })
-      else setSearchFilters({ genre: undefined as unknown as string })
+      setSearchFilters({ genre: value || undefined })
     }
   }, [params, setParams, setSearchFilters])
 

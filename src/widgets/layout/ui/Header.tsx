@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppStore } from '@/shared/lib/store'
 import { useSearchSuggestions } from '@/shared/hooks/useMovies'
 
@@ -108,6 +108,7 @@ export const Header = () => {
   const { data: suggestions } = useSearchSuggestions(searchQuery)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
 
   useEffect(() => {
     const q = params.get('q') || ''
@@ -131,6 +132,11 @@ export const Header = () => {
   }, [])
 
   const list = useMemo(() => suggestions?.docs ?? [], [suggestions])
+  const options = useMemo(() => {
+    const history = searchHistory.slice(0, 5).map((q) => ({ type: 'history' as const, id: `h-${q}`, label: q, value: q }))
+    const suggs = list.map((m) => ({ type: 'suggestion' as const, id: `s-${m.id}`, label: `${m.name || 'Без названия'}${m.year ? ` (${m.year})` : ''}`, value: m.name || '' }))
+    return [...history, ...suggs]
+  }, [searchHistory, list])
 
   const submit = (q: string) => {
     const next = q.trim()
@@ -153,7 +159,9 @@ export const Header = () => {
         ☰
       </MenuButton>
 
-      <Logo>NETFLIX</Logo>
+      <Logo>
+        <Link to="/" aria-label="На главную" style={{ color: 'inherit', textDecoration: 'none' }}>NETFLIX</Link>
+      </Logo>
 
       <SearchContainer isOpen={mobileSearchOpen}>
         <SearchInput
@@ -162,23 +170,51 @@ export const Header = () => {
           value={searchQuery}
           ref={inputRef}
           aria-label="Поиск фильмов"
+          role="combobox"
+          aria-expanded={focused && options.length > 0}
+          aria-autocomplete="list"
+          aria-controls="search-suggestions"
+          aria-activedescendant={highlightedIndex >= 0 ? options[highlightedIndex]?.id : undefined}
           onFocus={() => setFocused(true)}
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') submit(searchQuery)
+            if (e.key === 'ArrowDown') {
+              e.preventDefault()
+              setFocused(true)
+              setHighlightedIndex((prev) => Math.min(prev + 1, options.length - 1))
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault()
+              setHighlightedIndex((prev) => Math.max(prev - 1, -1))
+            } else if (e.key === 'Enter') {
+              if (highlightedIndex >= 0 && options[highlightedIndex]) {
+                submit(options[highlightedIndex].value)
+              } else {
+                submit(searchQuery)
+              }
+            } else if (e.key === 'Escape') {
+              setFocused(false)
+              setHighlightedIndex(-1)
+            }
           }}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        {focused && (list.length > 0 || searchHistory.length > 0) && (
-          <div style={{ position: 'absolute', background: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', marginTop: '8px', width: '100%', maxHeight: 360, overflowY: 'auto' }}>
-            {searchHistory.slice(0, 5).map((q) => (
-              <div key={`h-${q}`} style={{ padding: '8px 12px', cursor: 'pointer' }} onMouseDown={() => submit(q)}>
-                {q}
-              </div>
-            ))}
-            {list.map((m) => (
-              <div key={m.id} style={{ padding: '8px 12px', cursor: 'pointer' }} onMouseDown={() => submit(m.name || '')}>
-                {(m.name || 'Без названия') + (m.year ? ` (${m.year})` : '')}
+        {focused && options.length > 0 && (
+          <div
+            id="search-suggestions"
+            role="listbox"
+            style={{ position: 'absolute', background: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', marginTop: '8px', width: '100%', maxHeight: 360, overflowY: 'auto' }}
+          >
+            {options.map((opt, idx) => (
+              <div
+                key={opt.id}
+                id={opt.id}
+                role="option"
+                aria-selected={idx === highlightedIndex}
+                style={{ padding: '8px 12px', cursor: 'pointer', background: idx === highlightedIndex ? 'rgba(255,255,255,0.08)' : 'transparent' }}
+                onMouseEnter={() => setHighlightedIndex(idx)}
+                onMouseDown={() => submit(opt.value)}
+              >
+                {opt.label}
               </div>
             ))}
           </div>

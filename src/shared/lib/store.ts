@@ -9,9 +9,9 @@ interface AppState {
   sidebarOpen: boolean
   searchQuery: string
   searchFilters: {
-    genre?: string
-    year?: number | string
-    ratingFrom?: number
+    genre?: string | undefined
+    year?: number | string | undefined
+    ratingFrom?: number | undefined
   }
   searchHistory: string[]
   
@@ -138,7 +138,17 @@ export const useAppStore = create<AppState & AppActions>()(
         
         setSearchFilters: (filters) =>
           set((state) => {
-            state.searchFilters = { ...state.searchFilters, ...filters }
+            const next = { ...state.searchFilters }
+            ;(Object.keys(filters) as Array<keyof typeof next>).forEach((key) => {
+              const value = filters[key]
+              if (value === undefined) {
+                delete next[key]
+              } else {
+                // @ts-expect-error index access is safe for known keys
+                next[key] = value
+              }
+            })
+            state.searchFilters = next
           }),
 
         clearSearchFilters: () =>

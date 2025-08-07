@@ -26,7 +26,7 @@ export const handlers = [
     }
     return HttpResponse.json({ id, name: 'Detail Movie', year: 2020, rating: { kp: 7.9 }, poster: { url: '' } })
   }),
-  http.get(base + '/movie/:id/similar', () => {
+  http.get(base + '/movie/:id/similars', () => {
     return HttpResponse.json({ docs: [], total: 0, limit: 12, page: 1, pages: 1 })
   }),
 ]

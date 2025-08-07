@@ -29,9 +29,19 @@ const createApiClient = () => {
 
   client.interceptors.response.use(
     (response: AxiosResponse) => {
+      const preview = (() => {
+        const data = response.data
+        if (data == null) return data
+        try {
+          const str = JSON.stringify(data)
+          return str.length > 500 ? str.slice(0, 500) + '…(truncated)' : data
+        } catch {
+          return undefined
+        }
+      })()
       logger.info(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
         status: response.status,
-        data: response.data,
+        data: preview,
       })
       return response
     },
@@ -72,7 +82,6 @@ export const apiClient = createApiClient()
 export const createRequestConfig = (params?: Record<string, unknown>) => ({
   params: {
     ...params,
-    token: config.api.apiKey,
   },
 })
 

@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useAppStore } from '@/shared/lib/store'
 import { useInfiniteSearchMovies, useSearchMovies } from '@/shared/hooks/useMovies'
 import { MovieGrid } from '@/shared/ui'
@@ -66,6 +66,23 @@ export const SearchPage = () => {
       infinite.fetchNextPage()
     }
   }, { rootMargin: '800px' })
+
+  useEffect(() => {
+    const site = 'Netflix Clone'
+    const title = searchQuery ? `Поиск: ${searchQuery} — ${site}` : `Поиск фильмов — ${site}`
+    document.title = title
+    const existing = document.querySelector('meta[name="description"]') as HTMLMetaElement | null
+    const description = searchQuery
+      ? `Результаты поиска по запросу "${searchQuery}". Фильтры: жанр, год, рейтинг.`
+      : 'Поиск фильмов по жанрам, году и рейтингу на Netflix Clone.'
+    if (existing) existing.content = description
+    else {
+      const m = document.createElement('meta')
+      m.name = 'description'
+      m.content = description
+      document.head.appendChild(m)
+    }
+  }, [searchQuery])
 
   return (
     <SearchContainer>

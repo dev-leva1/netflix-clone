@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { useEffect, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ReactPlayer from 'react-player'
 import { useMovie, useInfiniteSimilarMovies } from '@/shared/hooks/useMovies'
@@ -137,18 +137,11 @@ const ProviderLink = styled.a`
 
 export const MoviePage = () => {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const movieId = id ? parseInt(id, 10) : 0
-  const safeMovieId = Math.min(10_000_000, Math.max(250, movieId || 250))
+  const movieId = id ? parseInt(id, 10) : NaN
+  const isValidId = Number.isFinite(movieId) && movieId > 0
 
-  useEffect(() => {
-    if (movieId !== safeMovieId) {
-      navigate(`/movie/${safeMovieId}`, { replace: true })
-    }
-  }, [movieId, safeMovieId, navigate])
-
-  const { data: movie, isLoading, error } = useMovie(safeMovieId, Boolean(safeMovieId))
-  const infiniteSimilar = useInfiniteSimilarMovies(safeMovieId, { limit: 12 })
+  const { data: movie, isLoading, error } = useMovie(isValidId ? (movieId as number) : 0, isValidId)
+  const infiniteSimilar = useInfiniteSimilarMovies(isValidId ? (movieId as number) : 0, { limit: 12 })
 
   const similarMovies = useMemo(() => {
     const pages = (infiniteSimilar.data?.pages ?? []) as Array<ApiResponse<Movie>>
@@ -163,6 +156,7 @@ export const MoviePage = () => {
   }, [infiniteSimilar.data])
 
   const title = movie?.name || movie?.alternativeName || 'Без названия'
+  const safeTrailerUrl = useMemo(() => selectSafeTrailerUrl(movie), [movie])
   const metaPieces = useMemo(() => {
     if (!movie) return [] as string[]
     const year = movie.year ? String(movie.year) : undefined
@@ -172,6 +166,22 @@ export const MoviePage = () => {
     return [year, length, age, rating].filter(Boolean) as string[]
   }, [movie])
 
+  useEffect(() => {
+    if (!movie) return
+    const site = 'Netflix Clone'
+    document.title = `${title} — ${site}`
+    const existing = document.querySelector('meta[name="description"]') as HTMLMetaElement | null
+    const description = movie.description || movie.shortDescription || `${title}${metaPieces.length ? ` — ${metaPieces.join(' · ')}` : ''}`
+    if (existing) existing.content = description
+    else {
+      const m = document.createElement('meta')
+      m.name = 'description'
+      m.content = description
+      document.head.appendChild(m)
+    }
+  }, [movie, title, metaPieces])
+
+  if (!isValidId) return <ErrorText>Страница не найдена</ErrorText>
   if (isLoading) return <LoadingText>Загрузка фильма...</LoadingText>
   if (error) return <ErrorText>Ошибка загрузки: {error.message}</ErrorText>
   if (!movie) return <ErrorText>Фильм не найден</ErrorText>
@@ -203,12 +213,12 @@ export const MoviePage = () => {
         <SectionTitle>Описание</SectionTitle>
         <Description>{movie.description || movie.shortDescription || 'Описание недоступно'}</Description>
 
-        {movie.videos?.trailers?.length ? (
+        {safeTrailerUrl ? (
           <div>
             <SectionTitle>Трейлер</SectionTitle>
             <TrailerWrapper>
               <ReactPlayer
-                url={movie.videos?.trailers?.[0]?.url ?? ''}
+                url={safeTrailerUrl}
                 width="100%"
                 height="100%"
                 controls
@@ -298,3 +308,27 @@ export const MoviePage = () => {
     </Page>
   )
 } 
+
+const ALLOWED_VIDEO_HOSTS = [
+  'youtube.com',
+  'www.youtube.com',
+  'youtu.be',
+  'vimeo.com',
+  'www.vimeo.com',
+  'player.vimeo.com',
+]
+
+function isAllowedVideoUrl(urlStr?: string): boolean {
+  if (!urlStr) return false
+  try {
+    const u = new URL(urlStr)
+    return ALLOWED_VIDEO_HOSTS.some((host) => u.hostname === host || u.hostname.endsWith('.' + host))
+  } catch {
+    return false
+  }
+}
+
+function selectSafeTrailerUrl(movie?: Movie): string | undefined {
+  const url = movie?.videos?.trailers?.[0]?.url
+  return isAllowedVideoUrl(url) ? url : undefined
+}
