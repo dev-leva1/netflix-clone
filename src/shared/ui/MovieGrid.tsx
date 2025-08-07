@@ -248,15 +248,17 @@ export const MovieGrid = ({
 
   return (
     <Container>
-      {title && <Title>{title}</Title>}
+      {title && <Title id="movies-title">{title}</Title>}
       <Grid
         columns={columns}
         variants={gridVariants}
         initial="hidden"
         animate="visible"
+        role="grid"
+        aria-labelledby={title ? 'movies-title' : undefined}
       >
         {movies.map((movie) => (
-          <motion.div key={movie.id} variants={cardVariants}>
+          <motion.div key={movie.id} variants={cardVariants} role="gridcell">
             <MovieCard
               movie={movie}
               size={cardSize}

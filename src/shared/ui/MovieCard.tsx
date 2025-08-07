@@ -242,7 +242,7 @@ export const MovieCard = ({
       whileTap="tap"
       onClick={handleCardClick}
     >
-      <ImageContainer>
+      <ImageContainer aria-hidden>
         {renderImage()}
         
         <AnimatePresence>

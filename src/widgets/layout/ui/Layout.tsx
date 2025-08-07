@@ -39,6 +39,12 @@ const Backdrop = styled.div<{ show: boolean }>`
   @media (min-width: ${({ theme }) => theme.breakpoints.md}px) {
     display: none;
   }
+
+  /* Делаем кликабельной область закрытия доступной с клавиатуры */
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: 2px;
+  }
 `
 
 interface LayoutProps {
@@ -66,7 +72,19 @@ export const Layout = ({ children }: LayoutProps) => {
   return (
     <LayoutContainer>
       <Sidebar />
-      <Backdrop show={isMobile && sidebarOpen} onClick={closeSidebar} />
+      <Backdrop
+        show={isMobile && sidebarOpen}
+        onClick={closeSidebar}
+        role="button"
+        aria-label="Закрыть меню"
+        tabIndex={isMobile && sidebarOpen ? 0 : -1}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            closeSidebar()
+          }
+        }}
+      />
       <MainContent sidebarOpen={sidebarOpen}>
         <Header />
         <ContentWrapper>

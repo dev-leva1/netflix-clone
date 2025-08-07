@@ -152,7 +152,18 @@ export const Sidebar = () => {
       <Dialog.Root open={sidebarOpen} onOpenChange={toggleSidebar}>
         <Dialog.Portal>
           <Dialog.Overlay asChild>
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 150 }} />
+            <div
+              role="button"
+              aria-label="Закрыть меню"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  toggleSidebar()
+                }
+              }}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 150 }}
+            />
           </Dialog.Overlay>
           <Dialog.Content asChild>
             <SidebarContainer

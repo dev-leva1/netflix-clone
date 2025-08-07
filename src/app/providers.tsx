@@ -8,8 +8,8 @@ import { logger } from '@/shared/lib/logger'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
 import { Fallback } from '@/app/Fallback'
 import { DevToasts } from '@/app/DevToasts'
-import { useEffect } from 'react'
-//import { useAppStore } from '@/shared/lib/store'
+import { useEffect, useMemo } from 'react'
+import { useTheme as useThemeStore } from '@/shared/lib/store'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,7 +23,29 @@ const queryClient = new QueryClient({
   },
 })
 
-const globalStyles = css`
+const createTheme = (mode: 'dark' | 'light') => {
+  const darkColors = config.ui.colors
+  const lightColors = {
+    ...config.ui.colors,
+    background: '#FFFFFF',
+    surface: '#F5F5F5',
+    text: {
+      primary: '#111111',
+      secondary: '#444444',
+      muted: '#6B7280',
+    },
+  }
+  const colors = mode === 'dark' ? darkColors : lightColors
+  return {
+    colors,
+    breakpoints: config.ui.breakpoints,
+    transitions: config.ui.transitions,
+    borderRadius: config.ui.borderRadius,
+    shadows: config.ui.shadows,
+  }
+}
+
+const globalStyles = (theme: ReturnType<typeof createTheme>) => css`
   * {
     margin: 0;
     padding: 0;
@@ -32,8 +54,8 @@ const globalStyles = css`
 
   body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: ${config.ui.colors.background};
-    color: ${config.ui.colors.text.primary};
+    background-color: ${theme.colors.background};
+    color: ${theme.colors.text.primary};
     line-height: 1.6;
   }
 
@@ -49,6 +71,12 @@ const globalStyles = css`
     background: none;
   }
 
+  /* Focus styles for accessibility */
+  :focus-visible {
+    outline: 2px solid ${theme.colors.primary};
+    outline-offset: 2px;
+  }
+
   img {
     max-width: 100%;
     height: auto;
@@ -59,37 +87,36 @@ const globalStyles = css`
   }
 
   ::-webkit-scrollbar-track {
-    background: ${config.ui.colors.surface};
+    background: ${theme.colors.surface};
   }
 
   ::-webkit-scrollbar-thumb {
-    background: ${config.ui.colors.text.muted};
+    background: ${theme.colors.text.muted};
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: ${config.ui.colors.text.secondary};
+    background: ${theme.colors.text.secondary};
   }
 `
-
-const theme = {
-  colors: config.ui.colors,
-  breakpoints: config.ui.breakpoints,
-  transitions: config.ui.transitions,
-  borderRadius: config.ui.borderRadius,
-  shadows: config.ui.shadows,
-}
 
 interface ProvidersProps {
   children: React.ReactNode
 }
 
 export const Providers = ({ children }: ProvidersProps) => {
+  const mode = useThemeStore()
+  const currentTheme = useMemo(() => createTheme(mode), [mode])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', mode)
+  }, [mode])
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ThemeProvider theme={theme}>
-          <Global styles={globalStyles} />
+        <ThemeProvider theme={currentTheme}>
+          <Global styles={globalStyles(currentTheme)} />
           <ServiceWorkerRegister />
           <ErrorBoundary
             fallback={<Fallback />}

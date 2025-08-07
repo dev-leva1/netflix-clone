@@ -100,10 +100,12 @@ const SearchToggleButton = styled(MenuButton)`
   }
 `
 
+const ThemeToggleButton = styled(MenuButton)``
+
 export const Header = () => {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const { searchQuery, setSearchQuery, toggleSidebar, addToSearchHistory, searchHistory } = useAppStore()
+  const { searchQuery, setSearchQuery, toggleSidebar, addToSearchHistory, searchHistory, setTheme, theme } = useAppStore()
   const [focused, setFocused] = useState(false)
   const { data: suggestions } = useSearchSuggestions(searchQuery)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -169,6 +171,7 @@ export const Header = () => {
           placeholder="Поиск фильмов..."
           value={searchQuery}
           ref={inputRef}
+          id="mobile-search-input"
           aria-label="Поиск фильмов"
           role="combobox"
           aria-expanded={focused && options.length > 0}
@@ -222,6 +225,14 @@ export const Header = () => {
       </SearchContainer>
 
       <UserActions>
+        <ThemeToggleButton
+          type="button"
+          aria-label={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? 'Light' : 'Dark'}
+        >
+          {theme === 'dark' ? '🌙' : '☀️'}
+        </ThemeToggleButton>
         <SearchToggleButton
           type="button"
           aria-label="Показать поиск"
